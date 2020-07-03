@@ -351,7 +351,7 @@ def MinSampleToCollect(GCD, tissues, ConfTHR = 0.8, MaxIter = 100):
             ConfPos, PosPerm = PowerAnalysis(GCD, tissues, j, SmpNum=smpC, Pdata=DataP)
             MeanConf.append(ConfPos)
 
-        if MeanConf>ConfTHR:
+        if np.mean(MeanConf)>ConfTHR:
             return smpC
 
         smpC+=1
