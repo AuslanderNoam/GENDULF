@@ -338,20 +338,25 @@ def PowerAnalysis(GCD, tissues, PM, Pdata = None, SmpNum = 5, rep=10000, iterCnt
 
     return ConfPos,PosPerm
 
-def MinSampleToCollect(GCD, tissues, ConfTHR = 0.8, MaxIter = 100):
+def MinSampleToCollect(GCD, tissues, ConfTHR = 0.8, MaxIter = 100, PrintProgress=True):
     '''Apply power analysis to PM with a tissues and a GCD, and return the minimal number of samples to collect'''
     DataP = GTEx(Tissues=tissues)
     DataP.GetStep1Pval(GCD)
     g0 = [DataP.gene[i] for i, e in enumerate(DataP.pv1) if e < PVALUE / len(DataP.gene)]
     smpC = 2
 
-    while smpC<MaxIter:
+    while smpC <= MaxIter:
         MeanConf = []
+        if PrintProgress:
+            print("Started testing power for %d cases and controls each" % smpC)
         for j in g0:
             ConfPos, PosPerm = PowerAnalysis(GCD, tissues, j, SmpNum=smpC, Pdata=DataP)
             MeanConf.append(ConfPos)
 
-        if np.mean(MeanConf)>ConfTHR:
+        meanPower = np.mean(MeanConf)    
+        if PrintProgress:
+            print("Power for %d cases and controls each is %.3f" % (smpC, meanPower))
+        if (meanPower>ConfTHR):
             return smpC
 
         smpC+=1
@@ -460,11 +465,5 @@ def main_CF():
                    'SLC6A14', 'EHF', 'APIP', 'SFTPA1', 'SFTPA2', 'SFTPB', 'SFTPC', 'SFTPD', 'KRT8']
 
     overlaps, mod_overlaps,pmod = SensitivityAnalysis('Lung', 'CFTR', MOD_CF_LUNG)
-
-
-
-
-
-
 
 
