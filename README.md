@@ -88,10 +88,17 @@ step, explained in manuscript)
 7. Saves the results of the steps, and plots for U2AF1, SF1 and SRSF4
 
 By default, all output files are saved in the subdirectory Outputs.
-This can be changed by changing the line of code
+In the code distribution from GitHub, this output directory does not exist a priori. Therefore, the user should
+create the directory using the UNIX command:
+mkdir Outputs
+or more generally
+
+mkdir <Name of output directory>
+before running GENDULF.
+
+In the GENDULF code, the default name of the output directory can be changed by changing the line of code
 OutputPath = os.getcwd()+'/Outputs/'
-As presently implemented one should do only a single run of
-GENDULF at a time, so as not to overwrite the files in
+As presently implemented one should do only a single run of GENDULF at a time, so as not to overwrite the files in
 the Outputs subdirectory.
 
 # Output files for SMA (in Outputs/):
@@ -164,10 +171,39 @@ To estimate the number of case and control samples required to accept
 DPM with confidence for a specific tissue and GCD, run the MinSampleToCollect
 Function. 
 For example, to run it for Lung tissue with CFTR as the GCD, use the following:
-> smpCollect = MinSampleToCollect(‘CFRT’['Lung’])
+> smpCollect = GENDULF_CODE.MinSampleToCollect('CFTR', ['Lung'])
 
-The parameter ConfTHR is the mean confidence value inferred for all PMs (default is 0.8)
-The parameter MaxIter is the maximal number of iterations (or maximal number of case and control samples one is willing to collect).
+The required first argument is the disease-causing gene in single quotes.
+The required second argument is a comma-separated non-empty list of GTEx tissues.
+The optional parameter ConfTHR is a floating point threshold for the  mean power inferred for all PMs (default is 0.8). This value should be between 0 and 1.
+The optional parameter MaxIter is an integer and is the maximal number of iterations (or maximal number of case and control samples one is willing to collect).
+The optional parameter PrintProgress, by default set to True, prints an update each time the number of samples is incremented and each time the
+power has been estimated for the newly incremented number of samples
+ 
+The procedure GENDULF_CODE.MinSampleToCollect  estimates power iteratively for the number of samples being 2, 3, 4, ..., MaxIter until either the number of samples
+equals MaxIter or the power exceeds the specified threshold of ConfTHR. If the power never exceeds ConfTHR, then None is returned. If the power does exceed
+ConfTHR, then the minimum number of samples achieving the sufficient power is returned as an integer value. To see the actual power estimates, one must
+keep PrintProgress set to True and save the contents stdout, where the updates are printed.
+
+Importantly, GENDULF_CODE.MinSampleToCollect internally runs step 1, which uses GTEx, but not step 2 because the intent of the power calculation is to estimate the number 
+of samples needed at step 2. One does not need to run step 1 separately for GENDULF_CODE.MinSampleToCollect with default parameter settings. In practice,
+step 2 involves collecting both cases and controls, but varying both numbers independently is time consuming. Therefore, we made the time-saving
+assumption that the two numbers are equal. An alternative time-saving assumption would be that one number is fixed and the other number varies. To 
+implement that assumption, one would modify the code in the helper pocedure PowerAnalysis as follows. At the two pairs of lines of code
+        posS = random.sample(posD, SmpNum)
+        negS = random.sample(posD, SmpNum)
+and
+            RSM = random.sample(posD, SmpNum)
+            RPM = random.sample(negD, SmpNum)
+one would change one occurrence of SmpNum to a constant and keep the other as a variable; the substring pos represents cases and the substring neg
+represents controls. If for example, the number of controls was fixed at 50, then one should add the line
+NUM_CONTROLS = 50
+and change the above four lines to:
+        posS = random.sample(posD, SmpNum)
+        negS = random.sample(posD, NUM_CONTROLS)
+and
+            RSM = random.sample(posD, SmpNum)
+            RPM = random.sample(negD, NUM_CONTROLS)
 
 
 
