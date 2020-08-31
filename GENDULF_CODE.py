@@ -338,6 +338,45 @@ def PowerAnalysis(GCD, tissues, PM, Pdata = None, SmpNum = 5, rep=10000, iterCnt
 
     return ConfPos,PosPerm
 
+def PowerAnalysisType1Error(GCD, tissues, PM, Pdata = None, SmpNum = 5, rep=10000, iterCnt = 10, PrintRes=False):
+    ''' Type 1 error Power analysis to estimate of SmpNum positive and negative samples
+    are sufficient for GENDULF step 2, given specific tissues, GCD and PM from step1. '''
+
+    if Pdata is None:
+        Pdata = GTEx(Tissues=tissues)
+        ##Get the PMs from step1
+        Pdata.GetStep1Pval(GCD)
+
+    mascG = list(Pdata.T2.loc[Pdata.GCDi[0]])
+
+    PMi = [i for i, j in enumerate(Pdata.gene) if j == PM]
+    expP = list(Pdata.T1.loc[PMi[0]])
+
+    posD = [expP[i] for i, j in enumerate(mascG) if j==True]
+    negD = [expP[i] for i, j in enumerate(mascG) if j == False]
+    PosPerm = []
+
+    for k in range(iterCnt):
+        ## Simulated false modifier (similar distributions)
+        posS = random.sample(posD, SmpNum)
+        negS = random.sample(negD, SmpNum)
+
+        PSC = sum(flatten([[p < n for p in posS] for n in negS]))
+        PSCd = []
+        for r in range(rep):
+            RSM = random.sample(posD, SmpNum)
+            RPM = random.sample(negD, SmpNum)
+            PSCd.append(sum(flatten([[p < n for p in RSM] for n in RPM])))
+
+        PosPerm.append(len([i for i in PSCd if i <= PSC]) / rep)
+
+    ConfPos = 1-len([i for i in PosPerm if i < PVALUE])/iterCnt
+
+    if PrintRes:
+        print("Confidence identifying DPM:: %s \n" % (ConfPos))
+
+    return ConfPos,PosPerm
+
 def MinSampleToCollect(GCD, tissues, ConfTHR = 0.8, MaxIter = 100, PrintProgress=True):
     '''Apply power analysis to PM with a tissues and a GCD, and return the minimal number of samples to collect'''
     DataP = GTEx(Tissues=tissues)
@@ -365,6 +404,32 @@ def MinSampleToCollect(GCD, tissues, ConfTHR = 0.8, MaxIter = 100, PrintProgress
     # below MaxIter that would allow inference with confidence
     return None
 
+def MinSampleToCollectType1Error(GCD, tissues, ConfTHR = 0.95, MaxIter = 100,PrintProgress=True):
+    '''Apply power analysis to limit type 1 error'''
+    DataP = GTEx(Tissues=tissues)
+    DataP.GetStep1Pval(GCD)
+    g0 = [DataP.gene[i] for i, e in enumerate(DataP.pv1) if e < PVALUE / len(DataP.gene)]
+    smpC = 6
+
+    while smpC <= MaxIter:
+        MeanConf = []
+        if PrintProgress:
+            print("Started testing power for %d cases and controls each" % smpC)
+        for j in g0:
+            ConfPos, PosPerm = PowerAnalysisType1Error(GCD, tissues, j, SmpNum=smpC, Pdata=DataP)
+            MeanConf.append(ConfPos)
+
+        meanPower = np.mean(MeanConf)
+        if PrintProgress:
+            print("Power type 1 for %d cases and controls each is %.3f" % (smpC, meanPower))
+        if (meanPower>ConfTHR):
+            return smpC
+
+        smpC+=1
+
+    ## Maximum iterations reached, no number of sampels
+    # below MaxIter that would allow inference with confidence
+    return None
 # Main Functions -----------------------------------------------------------------------------------------------------
 
 
