@@ -208,10 +208,7 @@ and
 
 
 Reference:
-[1] Auslander N, Ramos DM, Zelaya I, Karathia H, Crawford
-TO, Schaffer AA, Sumner CJ, Ruppin E.  The GENDULF algorithm: mining
-transcriptomics to uncover modifier genes for monogenic diseases
-caused by loss-off-function mutations, submitted.
+[1] Auslander N, Ramos DM, Zelaya I, Karathia H, Crawford TO, Schaffer AA, Sumner CJ, Ruppin E. [The GENDULF algorithm: mining transcriptomics to uncover modifier genes for monogenic diseases](https://www.embopress.org/doi/full/10.15252/msb.20209701) Molecular Systems Biology, 2020
 
 
 Contact:
